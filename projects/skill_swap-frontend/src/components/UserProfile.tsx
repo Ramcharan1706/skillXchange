@@ -189,8 +189,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ appClient }) => {
   }
 
   return (
-    <div className="w-full flex flex-col items-center justify-center min-h-[60vh] px-4" style={{ background: '#1e40af' }}>
-      <h2 className="text-5xl font-bold text-white mb-10">
+    <div className="w-full flex flex-col items-center justify-center min-h-[60vh] px-4">
+      <h2 className="text-4xl font-bold text-white mb-8">
         🎨 Your Profile
       </h2>
 

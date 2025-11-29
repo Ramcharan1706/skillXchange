@@ -54,27 +54,27 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ skillId, skill, mode = 'submi
 
   const renderSubmitForm = () => (
     <form onSubmit={handleSubmit}>
-      <div className="mb-4 bg-transparent">
-        <label className="block text-sm font-medium mb-3 text-center">Rating</label>
-        <div className="center-content">
+      <div className="mb-4">
+        <label className="form-label text-center block">Rating</label>
+        <div className="flex justify-center">
           <StarRating rating={rating} onChange={setRating} interactive />
         </div>
       </div>
-      <div className="mb-6 bg-transparent">
-        <label className="block text-sm font-medium mb-3 text-center">Comment</label>
+      <div className="mb-6">
+        <label className="form-label text-center block">Comment</label>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="w-full border border-white/30 px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white/10 text-white placeholder-white/50"
+          className="form-textarea"
           rows={4}
           required
         />
       </div>
-      <div className="btn-group bg-transparent">
+      <div className="btn-group">
         <button type="submit" disabled={loading} className="btn btn-primary btn-small disabled:opacity-50">
           {loading ? 'Submitting...' : 'Submit'}
         </button>
-        <button type="button" onClick={onClose} className="btn btn-warning btn-small">
+        <button type="button" onClick={onClose} className="btn btn-outline btn-small">
           Cancel
         </button>
       </div>
@@ -116,12 +116,23 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ skillId, skill, mode = 'submi
   )
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 center-both z-50" style={{ background: '#1e40af' }}>
-      <div className="card max-w-md w-full bg-blue-800/10 text-white border border-blue-800/30">
-        <h2 className="text-xl font-bold mb-6 text-center">
-          {viewMode === 'submit' ? 'Submit Review' : `Reviews for ${skill?.name || 'Skill'}`}
-        </h2>
-        {viewMode === 'submit' ? renderSubmitForm() : renderReviewsView()}
+    <div className="modal-overlay">
+      <div className="modal">
+        <div className="modal-header">
+          <h3 className="modal-title">
+            {viewMode === 'submit' ? 'Submit Review' : `Reviews for ${skill?.name || 'Skill'}`}
+          </h3>
+          <button
+            onClick={onClose}
+            className="modal-close"
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </div>
+        <div className="modal-body">
+          {viewMode === 'submit' ? renderSubmitForm() : renderReviewsView()}
+        </div>
       </div>
     </div>
   )

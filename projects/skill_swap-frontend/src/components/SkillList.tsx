@@ -53,7 +53,7 @@ const calculateNewRating = (currentRating: number, feedbackCount: number, newRat
 
 
 
-const SkillList: React.FC<SkillListProps> = ({ onBookSkill, onOpenReviewModal, algorandClient, userAddress, bookedSlots = [] }) => {
+const SkillList: React.FC<SkillListProps> = ({ onBookSkill, onOpenReviewModal, algorandClient, userAddress, bookedSlots = [], searchQuery = '' }) => {
   const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(false)
   const [registerLoading, setRegisterLoading] = useState(false)
@@ -214,7 +214,8 @@ const SkillList: React.FC<SkillListProps> = ({ onBookSkill, onOpenReviewModal, a
       (!filters.category || skill.category === filters.category) &&
       (!filters.level || skill.level === filters.level) &&
       (!filters.minRate || skill.rate >= Number(filters.minRate)) &&
-      (!filters.maxRate || skill.rate <= Number(filters.maxRate))
+      (!filters.maxRate || skill.rate <= Number(filters.maxRate)) &&
+      (!searchQuery || skill.name.toLowerCase().includes(searchQuery.toLowerCase()) || skill.description.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
     // Sort by rating (highest first), then by sessions completed
@@ -229,16 +230,16 @@ const SkillList: React.FC<SkillListProps> = ({ onBookSkill, onOpenReviewModal, a
   }, [skills, filters])
 
   return (
-    <div className="w-full mx-auto px-6 flex flex-col items-center justify-center min-h-[60vh] " style={{ background: '#1e40af' }}>
+    <div className="w-full">
       {/* Filters */}
-      <div className="mb-8 w-full flex flex-wrap gap-4 justify-center">
-        <select value={filters.category} onChange={e => setFilters(prev => ({ ...prev, category: e.target.value }))} className="border border-white/30 bg-white/10 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm">
-          <option value="" className="bg-gray-800">All Categories</option>
-          {SKILL_CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-gray-800">{cat}</option>)}
+      <div className="mb-8 flex flex-wrap gap-4 justify-center">
+        <select value={filters.category} onChange={e => setFilters(prev => ({ ...prev, category: e.target.value }))} className="form-select">
+          <option value="">All Categories</option>
+          {SKILL_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
         </select>
-        <select value={filters.level} onChange={e => setFilters(prev => ({ ...prev, level: e.target.value }))} className="border border-white/30 bg-white/10 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm">
-          <option value="" className="bg-gray-800">All Levels</option>
-          {SKILL_LEVELS.map(level => <option key={level} value={level} className="bg-gray-800">{level}</option>)}
+        <select value={filters.level} onChange={e => setFilters(prev => ({ ...prev, level: e.target.value }))} className="form-select">
+          <option value="">All Levels</option>
+          {SKILL_LEVELS.map(level => <option key={level} value={level}>{level}</option>)}
         </select>
       </div>
 
@@ -282,7 +283,7 @@ const SkillList: React.FC<SkillListProps> = ({ onBookSkill, onOpenReviewModal, a
                 {skill.availability.map((a, idx) => {
                   const isBooked = bookedSlots.some(bs => bs.skillId === skill.id && bs.slot === a.slot)
                   return (
-                    <li key={idx} className="text-center bg-gray-50 p-3 rounded-2xl border-2 border-gray-200">
+                    <li key={idx} className="text-center bg-gray-50 p-3 rounded-2xl border-2 border-gray-200 text-black">
                       <span className="font-semibold text-lg">{a.slot}</span>
                       {isBooked && (
                         <>

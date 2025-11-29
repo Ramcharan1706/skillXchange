@@ -5,6 +5,9 @@ import { AuthProvider } from '../context/AuthContext'
 import Home from './Home'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
+import SkillsPage from './pages/SkillsPage'
+import MentorsPage from './pages/MentorsPage'
+import DashboardPage from './pages/DashboardPage'
 import { getAlgodConfigFromViteEnvironment, getKmdConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs'
 
 let supportedWallets: SupportedWallet[]
@@ -53,13 +56,14 @@ export default function App() {
       <WalletProvider manager={walletManager}>
         <AuthProvider>
           <Router>
-            <div style={{ background: 'linear-gradient(to bottom right, #581c87, #3730a3, #000000)' }}>
-              <Routes>
-                <Route path="/" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/home" element={<Home />} />
-              </Routes>
-            </div>
+            <Routes>
+              <Route path="/" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/skills" element={<SkillsPage />} />
+              <Route path="/mentors" element={<MentorsPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+            </Routes>
           </Router>
         </AuthProvider>
       </WalletProvider>

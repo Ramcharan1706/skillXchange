@@ -11,9 +11,9 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
 
   const isKmd = (wallet: Wallet) => wallet.id === WalletId.KMD
   return (
-    <dialog id="connect_wallet_modal" className={`modal ${openModal ? 'modal-open' : ''}`} style={{ display: openModal ? 'block' : 'none' }}>
+    <dialog id="connect_wallet_modal" className={`modal ${openModal ? 'modal-open' : ''}`} style={{ display: openModal ? 'block' : 'none' , backgroundColor: 'black'}}>
       <form method="dialog" className="modal-box bg-gradient-to-br from-purple-900 via-indigo-900 to-black text-white border border-white/20 shadow-2xl">
-        <h3 className="font-bold text-2xl text-center mb-4">Select Wallet Provider</h3>
+        <h3 className="font-bold text-2xl text-center mb-4 ">Select Wallet Provider</h3>
 
         <div className="grid m-2 pt-5">
           {activeAddress && (
@@ -45,10 +45,11 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
             ))}
         </div>
 
-        <div className="modal-action grid gap-2">
+        <div  className="modal-action grid gap-2">
           <button
             data-test-id="close-wallet-modal"
-            className="btn bg-gray-600 text-white hover:bg-gray-700"
+            style={{backgroundColor:'black'}}
+            className="btn bg-gray-600 text-white hover:bg-green-700"
             onClick={() => {
               closeModal()
             }}
@@ -73,6 +74,7 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
                   }
                 }
               }}
+              style={{backgroundColor:'black'}}
             >
               Logout
             </button>

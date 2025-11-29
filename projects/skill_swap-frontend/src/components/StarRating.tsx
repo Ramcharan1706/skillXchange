@@ -14,15 +14,14 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onChange, interactive =
   }
 
   return (
-    <div className="flex gap-1" style={{ background: '#1e40af' }}>
+    <div className="star-rating">
       {Array(5)
         .fill(0)
         .map((_, i) => (
           <span
             key={i}
-            className={`${interactive ? 'cursor-pointer' : ''} transition-transform duration-150`}
+            className={`star-emoji ${interactive ? 'star-interactive' : ''} ${i < rating ? 'star-filled' : 'star-empty'}`}
             onClick={() => handleClick(i)}
-            style={{ fontSize: '2rem', userSelect: 'none' }}
             aria-label={`Rate ${i + 1}`}
           >
             {i < rating ? '🌟' : '☆'}
