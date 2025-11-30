@@ -4,27 +4,13 @@ import { useAuth } from '../../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
-
-interface DashboardStats {
-  totalSessions: number
-  upcomingSessions: number
-  completedSessions: number
-  totalEarnings: number
-  averageRating: number
-}
-
-interface RecentActivity {
-  id: number
-  type: 'session_booked' | 'session_completed' | 'payment_received'
-  title: string
-  description: string
-  timestamp: Date
-}
+import { DashboardStats, RecentActivity } from '../types'
 
 const DashboardPage: React.FC = () => {
   const { userName } = useAuth()
   const navigate = useNavigate()
   const [algorandClient, setAlgorandClient] = useState<AlgorandClient | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [stats, setStats] = useState<DashboardStats>({
     totalSessions: 0,
     upcomingSessions: 0,
@@ -50,7 +36,6 @@ const DashboardPage: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    // Mock dashboard data
     const mockStats: DashboardStats = {
       totalSessions: 24,
       upcomingSessions: 3,
@@ -66,21 +51,21 @@ const DashboardPage: React.FC = () => {
         type: 'session_booked',
         title: 'New Session Booked',
         description: 'React workshop with John Doe',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
       },
       {
         id: 2,
         type: 'payment_received',
         title: 'Payment Received',
         description: '25 ALGO from Python session',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
       },
       {
         id: 3,
         type: 'session_completed',
         title: 'Session Completed',
         description: 'JavaScript fundamentals with Jane Smith',
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
       }
     ]
     setRecentActivity(mockActivity)
@@ -88,8 +73,11 @@ const DashboardPage: React.FC = () => {
   }, [])
 
   const handleSearch = (query: string) => {
-    // Implement search functionality
-    console.log('Searching dashboard for:', query)
+    setSearchQuery(query)
+    // Filter recent activity based on search query
+    if (query.trim()) {
+      console.log('Searching dashboard for:', query)
+    }
   }
 
   const getActivityIcon = (type: string) => {
@@ -119,7 +107,7 @@ const DashboardPage: React.FC = () => {
               </div>
 
               {loading ? (
-                <p className="center-content text-lg">Loading dashboard...</p>
+                <p className="center-content text-lg py-8">Loading dashboard...</p>
               ) : (
                 <>
                   {/* Stats Grid */}

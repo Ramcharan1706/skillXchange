@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useWallet } from '@txnlab/use-wallet-react'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Features from './components/Features'
@@ -12,8 +13,32 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { SkillSwapClient } from './contracts/SkillSwap'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from './utils/network/getAlgoClientConfigs'
 
+interface Feedback {
+  id: number
+  student: string
+  rating: number
+  comment: string
+  date: string
+}
+
+interface Skill {
+  id: number
+  name: string
+  description: string
+  teacher: string
+  receiver: string
+  rate: number
+  category: string
+  level: 'Beginner' | 'Intermediate' | 'Advanced'
+  sessionsCompleted: number
+  rating: number
+  availability: { slot: string; link: string }[]
+  feedbacks: Feedback[]
+}
+
 const Home: React.FC = () => {
   const { role, userName } = useAuth()
+  const { activeAddress } = useWallet()
   const navigate = useNavigate()
   const [openBookingModal, setOpenBookingModal] = useState(false)
   const [openFeedbackModal, setOpenFeedbackModal] = useState(false)
@@ -22,6 +47,7 @@ const Home: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<{ slot: string; link: string } | null>(null)
   const [feedbackSkillId, setFeedbackSkillId] = useState<number | null>(null)
   const [bookedSlots, setBookedSlots] = useState<{ skillId: number; slot: string }[]>([])
+  const [skills, setSkills] = useState<Skill[]>([])
   const [algorandClient, setAlgorandClient] = useState<AlgorandClient | null>(null)
   const [appClient, setAppClient] = useState<SkillSwapClient | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -69,7 +95,7 @@ const Home: React.FC = () => {
     setSelectedSlot(null)
   }, [])
 
-  const openFeedback = useCallback((skillId: number) => {
+  const openFeedback = useCallback((skillId: number, skill?: Skill, mode?: 'submit' | 'view') => {
     setFeedbackSkillId(skillId)
     setOpenFeedbackModal(true)
   }, [])
@@ -78,6 +104,41 @@ const Home: React.FC = () => {
     setOpenFeedbackModal(false)
     setFeedbackSkillId(null)
   }, [])
+
+  const handleReviewSubmitted = useCallback(() => {
+    // Force a re-render of the modal with updated skill data
+    // The skill data is already updated in handleReviewSubmit, so we just need to trigger a refresh
+  }, [])
+
+  const handleReviewSubmit = useCallback(async (skillId: number, review: { rating: number; comment: string }) => {
+    // Find the skill and add the new review
+    setSkills(prevSkills =>
+      prevSkills.map(skill => {
+        if (skill.id === skillId) {
+          const newFeedbacks = [
+            ...skill.feedbacks,
+            {
+              id: Date.now(), // Simple ID generation
+              student: userName || 'Anonymous',
+              rating: review.rating,
+              comment: review.comment,
+              date: new Date().toLocaleDateString()
+            }
+          ]
+          // Calculate new average rating
+          const totalRating = newFeedbacks.reduce((sum, fb) => sum + fb.rating, 0)
+          const averageRating = newFeedbacks.length > 0 ? totalRating / newFeedbacks.length : 0
+
+          return {
+            ...skill,
+            feedbacks: newFeedbacks,
+            rating: averageRating
+          }
+        }
+        return skill
+      })
+    )
+  }, [userName])
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query)
@@ -161,7 +222,18 @@ const Home: React.FC = () => {
                   🎨 Available Skills
                 </h2>
               </div>
-              {algorandClient && <SkillList onBookSkill={openBooking} onOpenReviewModal={openFeedback} algorandClient={algorandClient} userAddress={userName} bookedSlots={bookedSlots} searchQuery={searchQuery} />}
+              {algorandClient && (
+                <SkillList
+                  onBookSkill={openBooking}
+                  onOpenReviewModal={openFeedback}
+                  algorandClient={algorandClient}
+                  userAddress={activeAddress || ''}
+                  bookedSlots={bookedSlots}
+                  searchQuery={searchQuery}
+                  skills={skills}
+                  setSkills={setSkills}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -215,18 +287,16 @@ const Home: React.FC = () => {
           initialSkillRate={selectedSkillRate}
           selectedSlot={selectedSlot}
           algorand={algorandClient}
-          activeAddress={userName}
+          activeAddress={activeAddress || undefined}
           onBookingSuccess={handleBookingSuccess}
         />
       )}
       {feedbackSkillId !== null && openFeedbackModal && (
         <ReviewModal
           skillId={feedbackSkillId}
+          skill={skills.find(s => s.id === feedbackSkillId)}
           onClose={closeFeedback}
-          onSubmit={(skillId: number, review: { rating: number; comment: string }) => {
-            // Review submission is handled in SkillList component
-            closeFeedback()
-          }}
+          onSubmit={handleReviewSubmit}
         />
       )}
     </main>

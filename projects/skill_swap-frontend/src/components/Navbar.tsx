@@ -1,15 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-
-interface Notification {
-  id: number
-  type: 'session_request' | 'confirmation' | 'message'
-  title: string
-  message: string
-  timestamp: Date
-  read: boolean
-}
+import { Notification } from '../types'
 
 interface NavbarProps {
   onSearch?: (query: string) => void
@@ -22,14 +14,13 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
-  // Mock notifications - in real app, this would come from API
   const [notifications] = useState<Notification[]>([
     {
       id: 1,
       type: 'session_request',
       title: 'New Session Request',
       message: 'Alice wants to book your React workshop',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+      timestamp: new Date(Date.now() - 1000 * 60 * 30),
       read: false
     },
     {
@@ -37,7 +28,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
       type: 'confirmation',
       title: 'Session Confirmed',
       message: 'Your Python session with Bob is confirmed for tomorrow',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
       read: false
     },
     {
@@ -45,30 +36,26 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
       type: 'message',
       title: 'New Message',
       message: 'Charlie: Thanks for the great session!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
       read: true
     }
   ])
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications])
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
-    if (onSearch) {
+    if (searchQuery.trim() && onSearch) {
       onSearch(searchQuery)
-    } else {
-      // Fallback: In real app, this would trigger search API call
-      console.log('Searching for:', searchQuery)
     }
-  }
+  }, [searchQuery, onSearch])
 
-  const handleNotificationClick = (notification: Notification) => {
-    // Mark as read and navigate to relevant page
+  const handleNotificationClick = useCallback((notification: Notification) => {
     console.log('Clicked notification:', notification)
     setShowNotifications(false)
-  }
+  }, [])
 
-  const handleProfileAction = (action: string) => {
+  const handleProfileAction = useCallback((action: string) => {
     switch (action) {
       case 'profile':
         navigate('/profile')
@@ -77,12 +64,16 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
         navigate('/settings')
         break
       case 'logout':
-        // Handle logout
         navigate('/')
         break
     }
     setShowProfileMenu(false)
-  }
+  }, [navigate])
+
+  const formatUserName = useCallback((name: string | null): string => {
+    if (!name) return 'User'
+    return `${name.slice(0, 22)}...${name.length > 44 ? name.slice(-4) : ''}`
+  }, [])
 
   return (
     <nav className="navbar">
@@ -105,11 +96,11 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           <form onSubmit={handleSearch} className="hidden md:flex">
             <input
               type="text"
-              style={{color:'white'}}
               placeholder="Search skills & mentors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="form-input px-4 py-2 rounded-lg text-sm w-64"
+              className="form-input px-4 py-2 rounded-lg text-sm w-64 text-white bg-neutral-800"
+              aria-label="Search"
             />
           </form>
 

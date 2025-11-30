@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Navbar from '../components/Navbar'
@@ -6,6 +6,7 @@ import MentorRegistrationForm from '../components/MentorRegistrationForm'
 import MentorCard from '../components/MentorCard'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
+import { searchMentors } from '../utils/search'
 
 interface Mentor {
   id: number
@@ -27,6 +28,7 @@ const MentorsPage: React.FC = () => {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [registeredMentors, setRegisteredMentors] = useState<Mentor[]>([])
+  const [initialLoading, setInitialLoading] = useState(true)
 
   useEffect(() => {
     const initClients = async () => {
@@ -37,6 +39,8 @@ const MentorsPage: React.FC = () => {
         setAlgorandClient(algorand)
       } catch (error) {
         console.error('Failed to initialize clients:', error)
+      } finally {
+        setInitialLoading(false)
       }
     }
     initClients()
@@ -46,13 +50,14 @@ const MentorsPage: React.FC = () => {
     setSearchQuery(query)
   }
 
+  const filteredMentors = useMemo(() => {
+    return searchMentors(registeredMentors, searchQuery)
+  }, [registeredMentors, searchQuery])
+
   const handleMentorRegistration = async (newMentor: Mentor) => {
     setLoading(true)
     try {
-      // Add mentor to the registered mentors list
       setRegisteredMentors(prev => [...prev, newMentor])
-
-      // Show success message
       alert('Mentor registration submitted successfully!')
       setShowRegistrationForm(false)
     } catch (error) {
@@ -76,7 +81,10 @@ const MentorsPage: React.FC = () => {
                   👨‍🏫 Expert Mentors
                 </h2>
                 <p className="text-muted text-center mt-2">
-                  Connect with experienced mentors in various fields
+                  {searchQuery.trim()
+                    ? `Found ${filteredMentors.length} mentor${filteredMentors.length !== 1 ? 's' : ''} matching "${searchQuery}"`
+                    : `Connect with experienced mentors in various fields (${registeredMentors.length} total)`
+                  }
                 </p>
               </div>
               <div className="p-8">
@@ -93,52 +101,41 @@ const MentorsPage: React.FC = () => {
                     </div>
 
                     {/* Registered Mentors List */}
-                    {(() => {
-                      const filteredMentors = registeredMentors.filter((mentor) => {
-                        if (!searchQuery.trim()) return true
-                        const query = searchQuery.toLowerCase()
-                        return (
-                          mentor.name.toLowerCase().includes(query) ||
-                          mentor.expertise.some(skill => skill.toLowerCase().includes(query)) ||
-                          mentor.bio.toLowerCase().includes(query) ||
-                          mentor.email.toLowerCase().includes(query)
-                        )
-                      })
-
-                      return filteredMentors.length > 0 ? (
-                        <div className="space-y-6">
-                          <h3 className="text-2xl font-bold text-white text-center mb-6">
-                            {searchQuery.trim()
-                              ? `Search Results (${filteredMentors.length} of ${registeredMentors.length})`
-                              : `Registered Mentors (${registeredMentors.length})`
-                            }
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredMentors.map((mentor) => (
-                              <MentorCard key={mentor.id} mentor={mentor} />
-                            ))}
-                          </div>
+                    {initialLoading ? (
+                      <p className="center-content text-lg py-8">Loading mentors...</p>
+                    ) : filteredMentors.length > 0 ? (
+                      <div className="space-y-6">
+                        <h3 className="text-2xl font-bold text-white text-center mb-6">
+                          {searchQuery.trim()
+                            ? `Search Results (${filteredMentors.length} of ${registeredMentors.length})`
+                            : `Registered Mentors (${registeredMentors.length})`
+                          }
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredMentors.map((mentor) => (
+                            <MentorCard key={mentor.id} mentor={mentor} />
+                          ))}
                         </div>
-                      ) : registeredMentors.length > 0 ? (
-                        <div className="text-center">
-                          <p className="text-lg text-muted mb-4">
-                            No mentors found matching "{searchQuery}"
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            Try searching for a different name, skill, or keyword.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-lg text-muted mb-4">
-                            No mentors registered yet.
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            Be the first to register as a mentor and start sharing your expertise!
-                          </p>
-                        </div>
-                      )
-                    })()}
+                      </div>
+                    ) : registeredMentors.length > 0 ? (
+                      <div className="text-center py-12">
+                        <p className="text-lg text-muted mb-4">
+                          No mentors found matching "{searchQuery}"
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          Try searching for a different name, skill, or keyword.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-lg text-muted mb-4">
+                          No mentors registered yet.
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          Be the first to register as a mentor and start sharing your expertise!
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <MentorRegistrationForm

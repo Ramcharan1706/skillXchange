@@ -2,56 +2,23 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useWallet } from '@txnlab/use-wallet-react'
 import { useSnackbar } from 'notistack'
 import { AlgorandClient, algo } from '@algorandfoundation/algokit-utils'
-
 import StarRating from './StarRating'
 import Badge from './Badge'
 import ReviewModal from './ReviewModal'
 import BookingModal from './BookingModal'
-
-interface Feedback {
-  id: number
-  student: string
-  rating: number
-  comment: string
-  date: string
-}
-
-interface Skill {
-  id: number
-  name: string
-  description: string
-  teacher: string
-  receiver: string
-  rate: number
-  category: string
-  level: 'Beginner' | 'Intermediate' | 'Advanced'
-  sessionsCompleted: number
-  rating: number
-  availability: { slot: string; link: string }[]
-  feedbacks: Feedback[]
-}
+import { Skill, Feedback } from '../types'
+import { SKILL_CONFIG, PAYMENT_CONFIG, VALIDATION_MESSAGES } from '../constants/config'
 
 interface SkillListProps {
   onBookSkill: (skillId: number, skillRate: number, selectedSlot: { slot: string; link: string }) => void
-  onOpenReviewModal: (skillId: number) => void
+  onOpenReviewModal: (skillId: number, skill?: Skill, mode?: 'submit' | 'view') => void
   algorandClient: AlgorandClient
   userAddress: string
   bookedSlots?: { skillId: number; slot: string }[]
   searchQuery?: string
+  skills: Skill[]
+  setSkills: React.Dispatch<React.SetStateAction<Skill[]>>
 }
-
-const PAYMENT_AMOUNT_ALGO = 0.1
-const PAYMENT_RECEIVER_ADDRESS = '2ZTFJNDXPWDETGJQQN33HAATRHXZMBWESKO2AUFZUHERH2H3TG4XTNPL4Y'
-
-const SKILL_CATEGORIES = [
-  'Programming', 'Music', 'Languages', 'Art', 'Sports', 'Cooking',
-  'Photography', 'Writing', 'Business', 'Science', 'Design', 'Other'
-]
-
-const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced'] as const
-
-const calculateNewRating = (currentRating: number, feedbackCount: number, newRating: number) =>
-  Math.round(((currentRating * feedbackCount + newRating) / (feedbackCount + 1)) * 10) / 10
 
 const SkillList: React.FC<SkillListProps> = ({
   onBookSkill,
@@ -60,16 +27,11 @@ const SkillList: React.FC<SkillListProps> = ({
   userAddress,
   bookedSlots = [],
   searchQuery,
+  skills,
+  setSkills,
 }) => {
-  const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(false)
   const [registerLoading, setRegisterLoading] = useState(false)
-  const [reviewModal, setReviewModal] = useState<{
-    skillId: number
-    isOpen: boolean
-    skill?: Skill
-    mode: 'submit' | 'view'
-  }>({ skillId: 0, isOpen: false, mode: 'submit' })
   const [bookingModal, setBookingModal] = useState<{
     isOpen: boolean
     skillId: number
@@ -78,113 +40,95 @@ const SkillList: React.FC<SkillListProps> = ({
     skill?: Skill
   }>({ isOpen: false, skillId: 0, skillRate: 0, selectedSlot: { slot: '', link: '' } })
 
-  const [form, setForm] = useState({
+  const [reviewModal, setReviewModal] = useState<{
+    isOpen: boolean
+    skillId: number
+    skill?: Skill
+    mode: 'submit' | 'view'
+  }>({ isOpen: false, skillId: 0, mode: 'view' })
+
+  const [form, setForm] = useState<{
+    name: string
+    description: string
+    receiver: string
+    rate: string
+    category: string
+    level: 'Beginner' | 'Intermediate' | 'Advanced'
+    availability: { slot: string; link: string }[]
+  }>({
     name: '',
     description: '',
     receiver: '',
     rate: '',
     category: '',
-    level: 'Beginner' as const,
-    availability: [] as { slot: string; link: string }[],
+    level: 'Beginner',
+    availability: [],
   })
 
   const [filters, setFilters] = useState({ category: '', level: '', minRate: '', maxRate: '' })
   const { transactionSigner, activeAccount } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
 
-  // Fetch skills (mock)
-  const fetchSkills = async () => {
-    setLoading(true)
-    try {
-      const mockSkills: Skill[] = [
-        {
-          id: 1,
-          name: 'React Development Workshop',
-          description: 'Learn React with hooks and modern practices.',
-          teacher: 'ALICE1234567890123456789012345678901234567890',
-          receiver: 'ALICE1234567890123456789012345678901234567890',
-          rate: 25,
-          category: 'Programming',
-          level: 'Intermediate',
-          sessionsCompleted: 12,
-          rating: 4.3,
-          availability: [
-            { slot: 'Monday 10 AM', link: 'https://meet.google.com/abc-defg-hij' },
-            { slot: 'Wednesday 2 PM', link: 'https://meet.google.com/klm-nopq-rst' },
-          ],
-          feedbacks: [
-            { id: 1, student: 'BOB123...', rating: 5, comment: 'Excellent session!', date: '2024-01-10' },
-          ],
-        },
-      ]
-      setSkills(mockSkills)
-    } catch {
-      enqueueSnackbar('Failed to fetch skills.', { variant: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchSkills()
-  }, [])
-
-  // Validation
-  const validateForm = () => {
-    if (!form.name || !form.description || !form.rate || !form.category) {
-      enqueueSnackbar('All fields are required.', { variant: 'warning' })
+  const validateForm = (): boolean => {
+    if (!form.name?.trim() || !form.description?.trim() || !form.rate || !form.category) {
+      enqueueSnackbar(VALIDATION_MESSAGES.REQUIRED_FIELDS, { variant: 'warning' })
       return false
     }
-    if (isNaN(Number(form.rate)) || Number(form.rate) <= 0) {
-      enqueueSnackbar('Rate must be a positive number.', { variant: 'warning' })
+
+    const rate = Number(form.rate)
+    if (isNaN(rate) || rate <= 0 || rate > SKILL_CONFIG.MAX_RATE) {
+      enqueueSnackbar(VALIDATION_MESSAGES.INVALID_RATE, { variant: 'warning' })
       return false
     }
+
     if (!form.availability.length) {
-      enqueueSnackbar('Add at least one time slot.', { variant: 'warning' })
+      enqueueSnackbar(VALIDATION_MESSAGES.MIN_ONE_SLOT, { variant: 'warning' })
       return false
     }
+
     if (!userAddress || !transactionSigner) {
-      enqueueSnackbar('Please connect your wallet and ensure it is active.', { variant: 'warning' })
+      enqueueSnackbar(VALIDATION_MESSAGES.WALLET_NOT_CONNECTED, { variant: 'warning' })
       return false
     }
-    for (const a of form.availability) {
-      if (!a.slot) {
-        enqueueSnackbar('Each slot must have a valid time.', { variant: 'warning' })
+
+    for (const slot of form.availability) {
+      if (!slot.slot?.trim()) {
+        enqueueSnackbar(VALIDATION_MESSAGES.INVALID_SLOT, { variant: 'warning' })
         return false
       }
     }
+
     return true
   }
 
-  // Payment
-  const sendPayment = async () => {
-    if (!transactionSigner || !userAddress) throw new Error('Wallet not connected')
+  const sendPayment = async (): Promise<string> => {
+    if (!transactionSigner || !userAddress) throw new Error(VALIDATION_MESSAGES.WALLET_NOT_CONNECTED)
 
-    enqueueSnackbar(`Sending payment of ${PAYMENT_AMOUNT_ALGO} ALGO...`, { variant: 'info' })
+    enqueueSnackbar(`Sending payment of ${PAYMENT_CONFIG.AMOUNT_ALGO} ALGO...`, { variant: 'info' })
     try {
       const result = await algorandClient.send.payment({
         sender: userAddress,
-        receiver: PAYMENT_RECEIVER_ADDRESS,
-        amount: algo(PAYMENT_AMOUNT_ALGO),
+        receiver: PAYMENT_CONFIG.RECEIVER_ADDRESS,
+        amount: algo(PAYMENT_CONFIG.AMOUNT_ALGO),
         signer: transactionSigner,
       })
       enqueueSnackbar(`Payment successful! TxID: ${result.txIds[0]}`, { variant: 'success' })
       return result.txIds[0]
     } catch (error: any) {
-      enqueueSnackbar(`Payment failed: ${error?.message || error}`, { variant: 'error' })
-      throw error
+      const errorMsg = `Payment failed: ${error?.message || 'Unknown error'}`
+      enqueueSnackbar(errorMsg, { variant: 'error' })
+      throw new Error(errorMsg)
     }
   }
 
-  // Register skill
   const registerSkillOnChain = async (): Promise<Skill> => {
-    const mockSkillId = Math.floor(Math.random() * 1000) + 1
+    const mockSkillId = Math.floor(Math.random() * 10000) + 1
     return {
       id: mockSkillId,
-      name: form.name,
-      description: form.description,
+      name: form.name.trim(),
+      description: form.description.trim(),
       teacher: userAddress,
-      receiver: form.receiver,
+      receiver: form.receiver.trim(),
       rate: Number(form.rate),
       category: form.category,
       level: form.level,
@@ -195,8 +139,9 @@ const SkillList: React.FC<SkillListProps> = ({
     }
   }
 
-  const handleRegisterSkill = async () => {
+  const handleRegisterSkill = async (): Promise<void> => {
     if (!validateForm()) return
+
     setRegisterLoading(true)
     try {
       await sendPayment()
@@ -212,27 +157,28 @@ const SkillList: React.FC<SkillListProps> = ({
         availability: [],
       })
       enqueueSnackbar('Skill registered successfully!', { variant: 'success' })
+    } catch (error) {
+      enqueueSnackbar(`Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}`, { variant: 'error' })
     } finally {
       setRegisterLoading(false)
     }
   }
 
-  // Add/remove slot inputs
-  const handleAddSlot = () => {
+  const handleAddSlot = (): void => {
     setForm((prev) => ({
       ...prev,
       availability: [...prev.availability, { slot: '', link: '' }],
     }))
   }
 
-  const handleRemoveSlot = (index: number) => {
+  const handleRemoveSlot = (index: number): void => {
     setForm((prev) => ({
       ...prev,
       availability: prev.availability.filter((_, i) => i !== index),
     }))
   }
 
-  const handleSlotChange = (index: number, slot: string, link: string) => {
+  const handleSlotChange = (index: number, slot: string, link: string): void => {
     setForm((prev) => ({
       ...prev,
       availability: prev.availability.map((a, i) =>
@@ -241,7 +187,6 @@ const SkillList: React.FC<SkillListProps> = ({
     }))
   }
 
-  // Filter and sort skills
   const filteredSkills = useMemo(() => {
     let filtered = skills.filter((skill) =>
       (!filters.category || skill.category === filters.category) &&
@@ -253,19 +198,91 @@ const SkillList: React.FC<SkillListProps> = ({
         skill.description.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
-    // Sort by rating (highest first), then by sessions completed
     filtered.sort((a, b) => {
-      if (b.rating !== a.rating) {
-        return b.rating - a.rating
-      }
+      if (b.rating !== a.rating) return b.rating - a.rating
       return b.sessionsCompleted - a.sessionsCompleted
     })
 
     return filtered
   }, [skills, filters, searchQuery])
 
+  const openReviewModal = (skillId: number, skill?: Skill, mode: 'submit' | 'view' = 'view') => {
+    setReviewModal({
+      isOpen: true,
+      skillId,
+      skill,
+      mode,
+    })
+  }
+
+  const closeReviewModal = () => {
+    setReviewModal(prev => ({ ...prev, isOpen: false }))
+  }
+
+  const handleReviewSubmit = async (skillId: number, review: { rating: number; comment: string }) => {
+    try {
+      // Find the skill and add the new review
+      setSkills(prevSkills =>
+        prevSkills.map(skill => {
+          if (skill.id === skillId) {
+            const newFeedback: Feedback = {
+              id: Date.now(), // Simple ID generation
+              student: userAddress || 'Anonymous',
+              rating: review.rating,
+              comment: review.comment,
+              date: new Date().toLocaleDateString(),
+            }
+
+            const updatedFeedbacks = [...skill.feedbacks, newFeedback]
+
+            // Calculate new average rating
+            const newRating = updatedFeedbacks.length > 0
+              ? updatedFeedbacks.reduce((sum, fb) => sum + fb.rating, 0) / updatedFeedbacks.length
+              : 0
+
+            return {
+              ...skill,
+              feedbacks: updatedFeedbacks,
+              rating: Math.round(newRating * 10) / 10, // Round to 1 decimal place
+            }
+          }
+          return skill
+        })
+      )
+
+      enqueueSnackbar('Review submitted successfully!', { variant: 'success' })
+
+      // Update the modal with the new skill data
+      const updatedSkill = skills.find(s => s.id === skillId)
+      if (updatedSkill) {
+        const newFeedback: Feedback = {
+          id: Date.now(),
+          student: userAddress || 'Anonymous',
+          rating: review.rating,
+          comment: review.comment,
+          date: new Date().toLocaleDateString(),
+        }
+        const updatedFeedbacks = [...updatedSkill.feedbacks, newFeedback]
+        const newRating = updatedFeedbacks.reduce((sum, fb) => sum + fb.rating, 0) / updatedFeedbacks.length
+
+        setReviewModal(prev => ({
+          ...prev,
+          skill: {
+            ...updatedSkill,
+            feedbacks: updatedFeedbacks,
+            rating: Math.round(newRating * 10) / 10,
+          },
+          mode: 'view', // Switch to view mode to show the new review
+        }))
+      }
+    } catch (error) {
+      enqueueSnackbar('Failed to submit review', { variant: 'error' })
+      throw error
+    }
+  }
+
   return (
-    <div className="w-full">
+    <div className="w-full space-y-8">
       {/* Filters */}
       <div className="mb-8 flex flex-wrap gap-4 justify-center">
         <select
@@ -276,7 +293,7 @@ const SkillList: React.FC<SkillListProps> = ({
           className="form-select"
         >
           <option value="">All Categories</option>
-          {SKILL_CATEGORIES.map((cat) => (
+          {SKILL_CONFIG.CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>
               {cat}
             </option>
@@ -290,7 +307,7 @@ const SkillList: React.FC<SkillListProps> = ({
           className="form-select"
         >
           <option value="">All Levels</option>
-          {SKILL_LEVELS.map((level) => (
+          {SKILL_CONFIG.LEVELS.map((level) => (
             <option key={level} value={level}>
               {level}
             </option>
@@ -306,10 +323,7 @@ const SkillList: React.FC<SkillListProps> = ({
           <p className="center-content text-lg">No skills found.</p>
         ) : (
           filteredSkills.map((skill) => (
-            <div
-              key={skill.id}
-              className="card card-centered transform hover:scale-105 transition-all duration-300 w-full"
-            >
+            <div key={skill.id} className="card card-centered transform hover:scale-105 transition-all duration-300 w-full">
               <h3 className="text-2xl font-bold mb-3 text-center text-white">
                 {skill.name}
               </h3>
@@ -419,27 +433,13 @@ const SkillList: React.FC<SkillListProps> = ({
                     </button>
                   ))}
                 <button
-                  onClick={() =>
-                    setReviewModal({
-                      skillId: skill.id,
-                      isOpen: true,
-                      skill,
-                      mode: 'view',
-                    })
-                  }
+                  onClick={() => openReviewModal(skill.id, skill, 'view')}
                   className="btn btn-info btn-large"
                 >
                   View Reviews
                 </button>
                 <button
-                  onClick={() =>
-                    setReviewModal({
-                      skillId: skill.id,
-                      isOpen: true,
-                      skill,
-                      mode: 'submit',
-                    })
-                  }
+                  onClick={() => openReviewModal(skill.id, skill, 'submit')}
                   className="btn btn-warning btn-large"
                 >
                   Leave Review
@@ -478,12 +478,7 @@ const SkillList: React.FC<SkillListProps> = ({
                   {skill.feedbacks.length > 2 && (
                     <button
                       onClick={() =>
-                        setReviewModal({
-                          skillId: skill.id,
-                          isOpen: true,
-                          skill,
-                          mode: 'view',
-                        })
+                        onOpenReviewModal(skill.id, skill, 'view')
                       }
                       className="text-blue-600 hover:underline text-lg font-bold mt-4 block text-center hover:text-blue-800 transition-colors"
                     >
@@ -549,7 +544,7 @@ const SkillList: React.FC<SkillListProps> = ({
             <option value="" className="bg-gray-800">
               Select Category
             </option>
-            {SKILL_CATEGORIES.map((cat) => (
+            {SKILL_CONFIG.CATEGORIES.map((cat) => (
               <option key={cat} value={cat} className="bg-gray-800">
                 {cat}
               </option>
@@ -560,12 +555,12 @@ const SkillList: React.FC<SkillListProps> = ({
             onChange={(e) =>
               setForm((prev) => ({
                 ...prev,
-                level: e.target.value as (typeof SKILL_LEVELS)[number],
+                level: e.target.value as (typeof SKILL_CONFIG.LEVELS)[number],
               }))
             }
             className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm text-lg font-medium"
           >
-            {SKILL_LEVELS.map((level) => (
+            {SKILL_CONFIG.LEVELS.map((level) => (
               <option key={level} value={level} className="bg-gray-800">
                 {level}
               </option>
@@ -632,51 +627,6 @@ const SkillList: React.FC<SkillListProps> = ({
         </div>
       </div>
 
-      {/* Review Modal */}
-      {reviewModal.isOpen && (
-        <ReviewModal
-          skillId={reviewModal.skillId}
-          skill={reviewModal.skill}
-          mode={reviewModal.mode}
-          onClose={() =>
-            setReviewModal({ skillId: 0, isOpen: false, mode: 'submit' })
-          }
-          onSubmit={(
-            skillId: number,
-            review: { rating: number; comment: string }
-          ) => {
-            const newFeedback: Feedback = {
-              id: Date.now(),
-              student: userAddress.slice(0, 10) + '...',
-              rating: review.rating,
-              comment: review.comment,
-              date: new Date().toISOString().split('T')[0],
-            }
-
-            setSkills((prevSkills) =>
-              prevSkills.map((skill) =>
-                skill.id === skillId
-                  ? {
-                      ...skill,
-                      feedbacks: [...skill.feedbacks, newFeedback],
-                      rating: calculateNewRating(
-                        skill.rating,
-                        skill.feedbacks.length,
-                        review.rating
-                      ),
-                    }
-                  : skill
-              )
-            )
-
-            enqueueSnackbar('Review submitted successfully!', {
-              variant: 'success',
-            })
-            setReviewModal({ skillId: 0, isOpen: false, mode: 'submit' })
-          }}
-        />
-      )}
-
       {/* Booking Modal */}
       <BookingModal
         openModal={bookingModal.isOpen}
@@ -689,7 +639,6 @@ const SkillList: React.FC<SkillListProps> = ({
         algorand={algorandClient}
         activeAddress={userAddress}
         onBookingSuccess={(skillId, slot) => {
-          // Parent should update bookedSlots via onBookSkill after successful payment
           onBookSkill(skillId, bookingModal.skillRate, bookingModal.selectedSlot)
           setBookingModal({
             isOpen: false,
@@ -699,6 +648,23 @@ const SkillList: React.FC<SkillListProps> = ({
           })
         }}
         defaultReceiver={bookingModal.skill?.receiver}
+      />
+
+      {/* Review Modal */}
+      <ReviewModal
+        open={reviewModal.isOpen}
+        skillId={reviewModal.skillId}
+        skill={reviewModal.skill}
+        mode={reviewModal.mode}
+        onClose={closeReviewModal}
+        onSubmit={handleReviewSubmit}
+        onReviewSubmitted={() => {
+          // Refresh the skill data in the modal
+          const updatedSkill = skills.find(s => s.id === reviewModal.skillId)
+          if (updatedSkill) {
+            setReviewModal(prev => ({ ...prev, skill: updatedSkill }))
+          }
+        }}
       />
     </div>
   )
