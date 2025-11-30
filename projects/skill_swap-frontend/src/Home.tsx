@@ -200,12 +200,15 @@ const Home: React.FC = () => {
         <BookingModal
           openModal={openBookingModal}
           setModalState={(value: boolean) => {
-            closeBooking()
             if (!value) {
-              // Booking completed, open review modal after a short delay
+              // Booking completed, close modal and open review modal after a short delay
+              closeBooking()
               setTimeout(() => {
                 openFeedback(selectedSkillId!)
               }, 1000)
+            } else {
+              // Just close the modal without opening review
+              closeBooking()
             }
           }}
           skillId={selectedSkillId}

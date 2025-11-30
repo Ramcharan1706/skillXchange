@@ -105,6 +105,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
           <form onSubmit={handleSearch} className="hidden md:flex">
             <input
               type="text"
+              style={{color:'white'}}
               placeholder="Search skills & mentors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -201,22 +202,22 @@ const Navbar: React.FC<NavbarProps> = ({ onSearch }) => {
                 <div className="py-2">
                   <button
                     onClick={() => handleProfileAction('profile')}
-                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-800 transition-colors"
+                    className="w-full text-left px-4 py-2 text-black hover:bg-neutral-800 transition-colors"
                   >
                     👤 View Profile
                   </button>
                   <button
                     onClick={() => handleProfileAction('settings')}
-                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-800 transition-colors"
+                    className="w-full text-left px-4 py-2 text-black hover:bg-neutral-800 transition-colors"
                   >
                     ⚙️ Settings
                   </button>
-                  <button
-                    onClick={() => handleProfileAction('logout')}
-                    className="w-full text-left px-4 py-2 text-white hover:bg-neutral-800 transition-colors"
-                  >
-                    🚪 Logout
-                  </button>
+            <button
+              onClick={() => handleProfileAction('logout')}
+              className="w-full text-left px-4 py-2 text-black hover:bg-neutral-800 transition-colors"
+            >
+              🚪 Logout
+            </button>
                 </div>
               </div>
             )}

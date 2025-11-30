@@ -24,8 +24,6 @@ export class SkillSwapClient {
    * 🧾 REGISTER USER (Wallet = Username)
    * --------------------------------------------- */
   async register_user(walletAddress: string, role: string): Promise<AppClientResponse<string>> {
-    console.log(`Registering wallet ${walletAddress} as ${role}`)
-
     // Assign unique token ID if not already generated
     if (!this.userTokenMap[walletAddress]) {
       this.userTokenMap[walletAddress] = this.generateUniqueTokenId(walletAddress)
@@ -33,7 +31,6 @@ export class SkillSwapClient {
 
     const tokenId = this.userTokenMap[walletAddress]
 
-    // TODO: Call on-chain registration logic here if available
     return { return: `Wallet ${walletAddress} registered successfully with Skill Token ID ${tokenId}` }
   }
 
@@ -83,7 +80,6 @@ export class SkillSwapClient {
         )
         .map((a: any) => a['asset-id'].toString())
 
-      console.log(`✅ Found ${nftAssetIds.length} NFTs for ${walletAddress}`)
       return { return: nftAssetIds }
     } catch (error) {
       console.error('Error fetching NFTs from Indexer:', error)
@@ -158,7 +154,6 @@ export class SkillSwapClient {
       this.userTokenMap[walletAddress] = this.generateUniqueTokenId(walletAddress)
     }
     const tokenId = this.userTokenMap[walletAddress]
-    console.log(`🔗 Skill Token ID for ${walletAddress}: ${tokenId}`)
     return { return: tokenId }
   }
 

@@ -31,7 +31,7 @@ export const createNFT = async (
     const selectedImage = nftImages[randomIndex]
 
     const nftMetadata: NFTMetadata = {
-      name: `SkillSwap Session #${sessionId || skillId}`,
+      name: `skillXchange Session #${sessionId || skillId}`,
       description: `NFT Reward for ${sessionId ? 'completing' : 'booking'} a session`,
       image: selectedImage,
       attributes: [
@@ -47,7 +47,7 @@ export const createNFT = async (
     // Create NFT ASA
     const result = await client.send.assetCreate({
       sender: owner,
-      assetName: `SkillSwap Session #${sessionId || skillId}`,
+      assetName: `skillXchange Session #${sessionId || skillId}`,
       unitName: `SS${(sessionId || skillId).toString().slice(-3)}`,
       total: BigInt(1),
       decimals: 0,

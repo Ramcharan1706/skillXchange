@@ -9,6 +9,7 @@ import {
 import algosdk from 'algosdk'
 import TimeSlotSelector from './TimeSlotSelector'
 import { createNFT } from '../utils/nftUtils'
+import ReviewModal from './ReviewModal'
 
 interface BookingModalProps {
   openModal: boolean
@@ -67,7 +68,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
   defaultReceiver = DEFAULT_RECEIVER,
   timeSlots: propTimeSlots,
 }) => {
-  const [skillRate, setSkillRate] = useState<number>(initialSkillRate || 0)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null)
   const [receiverAddress, setReceiverAddress] = useState<string>(defaultReceiver)
   const [bookingState, dispatch] = useReducer(bookingReducer, {
@@ -76,11 +76,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
     bookingError: null,
   })
 
+
   const { enqueueSnackbar } = useSnackbar()
   const { transactionSigner } = useWallet()
 
-  const totalPayment = skillRate
-  const isSkillRateValid = skillRate > 0
+  const totalPayment = initialSkillRate
+  const isSkillRateValid = initialSkillRate > 0
   const isReceiverValid = algosdk.isValidAddress(receiverAddress)
 
   const algodConfig = getAlgodConfigFromViteEnvironment()
@@ -151,6 +152,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }
 
+  // Removed insecure fallback payment method for security reasons
+
   /** ---------------- HANDLE BOOKING ---------------- */
   /**
    * Handles the booking process including validation and payment.
@@ -177,18 +180,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
       await new Promise((resolve) => setTimeout(resolve, 1500)) // Simulate booking delay
 
       // Award NFT for booking - Create real NFT asset
-      try {
-        const assetId = await createNFT(activeAddress!, transactionSigner, client!, skillId)
-        if (assetId) {
-          console.log(`NFT Asset created with ID: ${assetId} for wallet: ${activeAddress}`)
-          enqueueSnackbar(`🎨 NFT Asset #${assetId} created and stored in your wallet!`, { variant: 'success' })
-          enqueueSnackbar(`🎁 Check your profile to view this NFT in your collection!`, { variant: 'info' })
-        } else {
+      if (client) {
+        try {
+          const assetId = await createNFT(activeAddress!, transactionSigner, client, skillId)
+          if (assetId) {
+            console.log(`NFT Asset created with ID: ${assetId} for wallet: ${activeAddress}`)
+            enqueueSnackbar(`🎨 NFT Asset #${assetId} created and stored in your wallet!`, { variant: 'success' })
+            enqueueSnackbar(`🎁 Check your profile to view this NFT in your collection!`, { variant: 'info' })
+          } else {
+            enqueueSnackbar('NFT creation failed, but booking was successful.', { variant: 'warning' })
+          }
+        } catch (error) {
+          console.error('Failed to create NFT:', error)
           enqueueSnackbar('NFT creation failed, but booking was successful.', { variant: 'warning' })
         }
-      } catch (error) {
-        console.error('Failed to create NFT:', error)
-        enqueueSnackbar('NFT creation failed, but booking was successful.', { variant: 'warning' })
+      } else {
+        enqueueSnackbar('NFT creation skipped due to client not available.', { variant: 'warning' })
       }
 
       dispatch({ type: 'SET_CONFIRMED', payload: true })
@@ -207,179 +214,184 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }
 
-  if (!openModal) return null
-
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <h3 className="modal-title" id="booking_modal_title">
-            🚀 Book a Session
-          </h3>
-          <button
-            onClick={() => setModalState(false)}
-            className="modal-close"
-            aria-label="Close modal"
+    <dialog
+      id="booking_modal"
+      className={`modal ${openModal ? 'modal-open' : ''} bg-black/70 backdrop-blur-md`}
+      onClose={() => setModalState(false)}
+      aria-modal="true"
+      role="dialog"
+      style={{ background: 'linear-gradient(135deg, var(--color-neutral-900) 0%, var(--color-neutral-800) 100%)', padding: '3rem' }}
+    >
+      <form
+        method="dialog"
+        className="modal-box bg-blue-800/10 border-2 border-blue-800/30 shadow-3xl max-w-2xl p-10 rounded-3xl"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!bookingState.loading) handleBookSession()
+        }}
+        aria-labelledby="booking_modal_title"
+      >
+        <h3
+          id="booking_modal_title"
+          className="text-4xl font-bold mb-8 flex items-center justify-center text-white"
+        >
+          🚀 Book a Session
+        </h3>
+
+        {/* Skill Info */}
+        <div className="mb-8 text-center">
+          <label className="text-xl font-bold text-gray-700 mb-3 block">🎯 Skill ID</label>
+          <div className="bg-blue-800/10 px-6 py-4 rounded-2xl font-bold text-white border-2 border-blue-800/30 text-xl shadow-lg">
+            {skillId}
+          </div>
+        </div>
+
+        {/* Selected Slot */}
+        <div className="mb-8">
+          <label className="text-xl font-bold text-gray-700 mb-3 block">📅 Selected Slot</label>
+          <div className="bg-gray-100 px-4 py-2 rounded-lg text-gray-800 font-semibold select-all">
+            {selectedSlot.slot}
+          </div>
+        </div>
+
+            {/* Receiver */}
+        <div className="mb-8">
+          <label
+            htmlFor="receiver-address"
+            className="text-xl font-bold text-gray-700 mb-3 block"
           >
-            ×
+            🏠 Receiver Address
+          </label>
+          <input
+            id="receiver-address"
+            type="text"
+            value={receiverAddress}
+            onChange={(e) => {
+              setReceiverAddress(e.target.value.trim())
+              dispatch({ type: 'SET_ERROR', payload: null })
+            }}
+            className={`w-full px-4 py-3 rounded-2xl border-2 text-lg font-mono transition-all duration-500 text-black bg-blue-800/10
+              ${
+                isReceiverValid || receiverAddress === ''
+                  ? 'border-blue-800/30 focus:ring-4 focus:ring-blue-500'
+                  : 'border-red-400 focus:ring-4 focus:ring-red-300'
+              }
+              placeholder:text-white/50`}
+            disabled={bookingState.loading || bookingState.bookingConfirmed}
+            placeholder="Enter Algorand address"
+            aria-describedby="receiver-error"
+          />
+        </div>
+
+
+        {/* Skill Rate */}
+        <div className="mb-8">
+          <label className="text-xl font-bold text-gray-700 mb-3 block">💰 Skill Rate (ALGO/hr)</label>
+          <div className="w-full px-6 py-4 rounded-2xl border-2 text-xl font-bold text-white bg-blue-800/10 border-blue-800/30">
+            {initialSkillRate.toFixed(3)} ALGO
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {bookingState.bookingError && (
+          <div
+            id="receiver-error"
+            className="mt-6 p-4 bg-red-50 border-2 border-red-200 rounded-2xl"
+            role="alert"
+          >
+            <p className="text-red-700 font-bold">❌ {bookingState.bookingError}</p>
+          </div>
+        )}
+
+        {/* Total and Book Button */}
+        <div className="flex justify-between items-center mt-10 p-6 bg-blue-800/10 rounded-3xl border-2 border-blue-800/30 shadow-xl">
+          <strong className="text-2xl text-white">💎 Total: {totalPayment.toFixed(3)} ALGO</strong>
+          <button
+            type="submit"
+            disabled={bookingState.loading || bookingState.bookingConfirmed}
+            className="bg-blue-800 text-black px-8 py-4 rounded-2xl font-bold text-xl hover:bg-blue-900 transition-all disabled:opacity-50"
+            aria-label={
+              bookingState.loading
+                ? 'Processing payment'
+                : bookingState.bookingConfirmed
+                ? 'Booking confirmed'
+                : 'Pay and book session'
+            }
+          >
+            {bookingState.loading
+              ? '🔄 Processing...'
+              : bookingState.bookingConfirmed
+              ? '✅ Booked'
+              : '✨ Pay & Book'}
           </button>
         </div>
 
-        <div className="modal-body">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (!bookingState.loading) handleBookSession()
-            }}
-            aria-labelledby="booking_modal_title"
-          >
-            {/* Skill Info */}
-            <div className="form-group">
-              <label className="form-label">🎯 Skill ID</label>
-              <div className="card p-4 text-center">
-                <span className="text-xl font-bold">{skillId}</span>
-              </div>
-            </div>
+        {/* ---------------- SHOW SLOTS ONLY AFTER BOOKING CONFIRMATION ---------------- */}
+        {bookingState.bookingConfirmed && (
+          <div className="mt-8 p-6 bg-blue-800/10 rounded-3xl border-2 border-blue-800/30 shadow-lg">
+            <h4 className="text-2xl font-bold text-white mb-4">🎉 Booking Confirmed!</h4>
+            <p className="text-lg text-white mb-4">
+              You can now select your session time or join directly:
+            </p>
 
-            {/* Selected Slot */}
-            <div className="form-group">
-              <label className="form-label">📅 Selected Slot</label>
-              <div className="card p-4">
-                <span className="font-semibold select-all">{selectedSlot.slot}</span>
-              </div>
-            </div>
+            {/* Time Slots (now visible only after booking) */}
+            <TimeSlotSelector
+              timeSlots={timeSlots}
+              selectedTimeSlot={selectedTimeSlot}
+              onSelectSlot={setSelectedTimeSlot}
+            />
 
-            {/* Receiver */}
-            <div className="form-group">
-              <label htmlFor="receiver-address" className="form-label">
-                🏠 Receiver Address
-              </label>
-              <input
-                id="receiver-address"
-                type="text"
-                value={receiverAddress}
-                onChange={(e) => {
-                  setReceiverAddress(e.target.value.trim())
-                  dispatch({ type: 'SET_ERROR', payload: null })
-                }}
-                className={`form-input ${!isReceiverValid && receiverAddress !== '' ? 'border-red-400' : ''}`}
-                disabled={bookingState.loading || bookingState.bookingConfirmed}
-                placeholder="Enter Algorand address"
-                aria-describedby="receiver-error"
-              />
-            </div>
-
-            {/* Skill Rate (Fixed) */}
-            <div className="form-group">
-              <label className="form-label">💰 Skill Rate (ALGO/hr)</label>
-              <div className="card p-4">
-                <span className="text-xl font-bold">{skillRate.toFixed(3)}</span>
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {bookingState.bookingError && (
-              <div
-                id="receiver-error"
-                className="p-4 bg-red-50 border border-red-200 rounded-lg"
-                role="alert"
-              >
-                <p className="text-red-700 font-bold">❌ {bookingState.bookingError}</p>
-              </div>
-            )}
-
-            {/* Total and Book Button */}
-            <div className="card p-6 mt-6">
-              <div className="flex justify-between items-center">
-                <strong className="text-2xl">💎 Total: {totalPayment.toFixed(3)} ALGO</strong>
-                <button
-                  type="submit"
-                  disabled={bookingState.loading || bookingState.bookingConfirmed}
-                  className="btn btn-primary btn-lg"
-                  aria-label={
-                    bookingState.loading
-                      ? 'Processing payment'
-                      : bookingState.bookingConfirmed
-                      ? 'Booking confirmed'
-                      : 'Pay and book session'
-                  }
-                >
-                  {bookingState.loading
-                    ? '🔄 Processing...'
-                    : bookingState.bookingConfirmed
-                    ? '✅ Booked'
-                    : '✨ Pay & Book'}
-                </button>
-              </div>
-            </div>
-
-            {/* ---------------- SHOW SLOTS ONLY AFTER BOOKING CONFIRMATION ---------------- */}
-            {bookingState.bookingConfirmed && (
-              <div className="card mt-6">
-                <h4 className="text-2xl font-bold mb-4">🎉 Booking Confirmed!</h4>
-                <p className="text-lg mb-4">
-                  You can now select your session time or join directly:
+            {selectedTimeSlot && (
+              <div className="p-4 bg-blue-800/10 rounded-2xl border-2 border-blue-800/30">
+                <p className="text-lg text-white mb-2">
+                  ✅ Selected Slot: <strong>{selectedTimeSlot.time}</strong>
                 </p>
-
-                {/* Time Slots (now visible only after booking) */}
-                <TimeSlotSelector
-                  timeSlots={timeSlots}
-                  selectedTimeSlot={selectedTimeSlot}
-                  onSelectSlot={setSelectedTimeSlot}
-                />
-
-                {selectedTimeSlot && (
-                  <div className="card mt-4">
-                    <p className="text-lg mb-2">
-                      ✅ Selected Slot: <strong>{selectedTimeSlot.time}</strong>
-                    </p>
-                    <p className="text-sm text-muted mb-4">
-                      Your meeting link is ready. You can join the session or share the link below.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <button
-                        onClick={() => window.open(selectedTimeSlot.meetLink, '_blank')}
-                        className="btn btn-primary"
-                        aria-label={`Join meeting at ${selectedTimeSlot.time}`}
-                      >
-                        🔗 Join Meeting
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(selectedTimeSlot.meetLink)
-                            enqueueSnackbar('Link copied to clipboard!', { variant: 'success' })
-                          } catch (err) {
-                            enqueueSnackbar('Failed to copy link', { variant: 'error' })
-                          }
-                        }}
-                        className="btn btn-outline"
-                        aria-label="Copy meeting link to clipboard"
-                      >
-                        📋 Copy Link
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <p className="text-sm text-white/70 mb-4">
+                  Your meeting link is ready. You can join the session or share the link below.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => window.open(selectedTimeSlot.meetLink, '_blank')}
+                    className="bg-blue-800 text-white px-6 py-3 rounded-2xl font-bold text-lg hover:bg-blue-900 transition-all flex-1"
+                    aria-label={`Join meeting at ${selectedTimeSlot.time}`}
+                  >
+                    🔗 Join Meeting
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(selectedTimeSlot.meetLink)
+                        enqueueSnackbar('Link copied to clipboard!', { variant: 'success' })
+                      } catch (err) {
+                        enqueueSnackbar('Failed to copy link', { variant: 'error' })
+                      }
+                    }}
+                    className="bg-blue-800 text-white px-6 py-3 rounded-2xl font-bold text-lg hover:bg-blue-900 transition-all flex-1"
+                    aria-label="Copy meeting link to clipboard"
+                  >
+                    📋 Copy Link
+                  </button>
+                </div>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Close Button */}
-            <div className="modal-actions">
-              <button
-                type="button"
-                onClick={() => setModalState(false)}
-                className="btn btn-outline"
-                disabled={bookingState.loading}
-                aria-label={bookingState.bookingConfirmed ? 'Close modal' : 'Cancel booking'}
-              >
-                {bookingState.bookingConfirmed ? '✨ Close' : '🚫 Cancel'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+        {/* Close Button */}
+        <button
+          type="button"
+          onClick={() => setModalState(false)}
+          className="mt-8 w-full text-white/70 hover:text-white underline text-lg font-bold"
+          disabled={bookingState.loading}
+          aria-label={bookingState.bookingConfirmed ? 'Close modal' : 'Cancel booking'}
+        >
+          {bookingState.bookingConfirmed ? '✨ Close' : '🚫 Cancel'}
+        </button>
+      </form>
+
+
+    </dialog>
   )
 }
 

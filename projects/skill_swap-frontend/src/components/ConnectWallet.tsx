@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useWallet, Wallet, WalletId } from '@txnlab/use-wallet-react'
 import Account from './Account'
 
@@ -11,8 +12,8 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
 
   const isKmd = (wallet: Wallet) => wallet.id === WalletId.KMD
   return (
-    <dialog id="connect_wallet_modal" className={`modal ${openModal ? 'modal-open' : ''}`} style={{ display: openModal ? 'block' : 'none' , backgroundColor: 'black'}}>
-      <form method="dialog" className="modal-box bg-gradient-to-br from-purple-900 via-indigo-900 to-black text-white border border-white/20 shadow-2xl">
+    <dialog id="connect_wallet_modal" className={`modal backdrop-blur-md bg-black/80 ${openModal ? 'modal-open opacity-100 scale-100' : 'opacity-0 scale-95'} transition-all duration-300 ease-out`} style={{ display: openModal ? 'flex' : 'none', zIndex: 9999, backgroundColor:'rgba(0, 0, 0, 0.8)' }}>
+      <form method="dialog" className="modal-box bg-gradient-to-br from-purple-900 via-indigo-900 to-black text-black border border-white/20 shadow-2xl max-w-4xl w-full mx-4">
         <h3 className="font-bold text-2xl text-center mb-4 ">Select Wallet Provider</h3>
 
         <div className="grid m-2 pt-5">
@@ -27,7 +28,7 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
             wallets?.map((wallet) => (
               <button
                 data-test-id={`${wallet.id}-connect`}
-                className="btn bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white border-0 m-2 hover:from-cyan-500 hover:via-blue-600 hover:to-purple-600 transition-all duration-300"
+                className="btn btn-lg bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-black border-0 m-4 p-6 hover:from-cyan-500 hover:via-blue-600 hover:to-purple-600 transition-all duration-300 text-xl"
                 key={`provider-${wallet.id}`}
                 onClick={() => {
                   return wallet.connect()
@@ -37,7 +38,7 @@ const ConnectWallet = ({ openModal, closeModal }: ConnectWalletInterface) => {
                   <img
                     alt={`wallet_icon_${wallet.id}`}
                     src={wallet.metadata.icon}
-                    style={{ objectFit: 'contain', width: '30px', height: 'auto' }}
+                    style={{ objectFit: 'contain', width: '60px', height: 'auto' }}
                   />
                 )}
                 <span>{isKmd(wallet) ? 'LocalNet Wallet' : wallet.metadata.name}</span>

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Navbar from '../components/Navbar'
 import SkillList from '../components/SkillList'
-import SkillRegistrationForm from '../components/SkillRegistrationForm'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { getAlgodConfigFromViteEnvironment, getIndexerConfigFromViteEnvironment } from '../utils/network/getAlgoClientConfigs'
 
@@ -12,6 +11,7 @@ const SkillsPage: React.FC = () => {
   const navigate = useNavigate()
   const [algorandClient, setAlgorandClient] = useState<AlgorandClient | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [bookedSlots, setBookedSlots] = useState<{ skillId: number; slot: string }[]>([])
 
   useEffect(() => {
     const initClients = async () => {
@@ -34,11 +34,11 @@ const SkillsPage: React.FC = () => {
   const handleBookSkill = (skillId: number, skillRate: number, selectedSlot: { slot: string; link: string }) => {
     // Handle booking logic
     console.log('Booking skill:', skillId, skillRate, selectedSlot)
+    setBookedSlots(prev => [...prev, { skillId, slot: selectedSlot.slot }])
   }
 
   const handleOpenReviewModal = (skillId: number) => {
     // Handle review modal opening
-    console.log('Opening review modal for skill:', skillId)
   }
 
   return (
@@ -63,6 +63,7 @@ const SkillsPage: React.FC = () => {
                   onOpenReviewModal={handleOpenReviewModal}
                   algorandClient={algorandClient}
                   userAddress={userName}
+                  bookedSlots={bookedSlots}
                   searchQuery={searchQuery}
                 />
               )}
@@ -70,15 +71,7 @@ const SkillsPage: React.FC = () => {
           </div>
         </section>
 
-        <section className="py-16" style={{ background: 'var(--color-neutral-900)' }}>
-          <div className="container">
-            <SkillRegistrationForm
-              onRegister={(newSkill) => console.log('Register skill:', newSkill)}
-              loading={false}
-              userAddress={userName}
-            />
-          </div>
-        </section>
+
       </div>
     </main>
   )

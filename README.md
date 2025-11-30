@@ -1,6 +1,6 @@
-# skill_swap
+# skillXchange
 
-This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
+SkillXchange is a decentralized platform for skill swapping, enabling users to exchange knowledge and expertise securely on the Algorand blockchain. This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
 
 ## Setup
 

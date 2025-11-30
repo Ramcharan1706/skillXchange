@@ -88,12 +88,35 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
       className="card card-centered w-full text-white border border-blue-800/30"
       style={{ background: '#1e40af', padding: '3rem' }}
     >
-      <h2 className="text-2xl font-bold mb-8 text-center">Register New Skill</h2>
+      <h2 className="text-2xl font-bold mb-8 text-center text-white">Register New Skill</h2>
 
-      <form onSubmit={handleSubmit} className="form-container">
+      {/* 🌟 Apply black text to all form elements */}
+      <form
+        onSubmit={handleSubmit}
+        className="form-container"
+        style={{
+          color: 'black'
+        }}
+      >
+        {/* Ensure all input/select/textarea text is black */}
+        <style>
+          {`
+            .form-container input,
+            .form-container textarea,
+            .form-container select {
+              color: black !important;
+            }
+            .form-container input::placeholder,
+            .form-container textarea::placeholder {
+              color: black !important;
+              opacity: 0.7;
+            }
+          `}
+        </style>
+
         {/* Skill Name */}
         <div>
-          <label className="form-label">Skill Name</label>
+          <label className="form-label text-white">Skill Name</label>
           <input
             type="text"
             name="name"
@@ -107,7 +130,7 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
 
         {/* Receiver Wallet Address */}
         <div>
-          <label className="form-label">Receiver Wallet Address</label>
+          <label className="form-label text-white">Receiver Wallet Address</label>
           <input
             type="text"
             name="receiver"
@@ -121,7 +144,7 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
 
         {/* Description */}
         <div>
-          <label className="form-label">Description</label>
+          <label className="form-label text-white">Description</label>
           <textarea
             name="description"
             value={formData.description}
@@ -135,7 +158,7 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
 
         {/* Category */}
         <div>
-          <label className="form-label">Category</label>
+          <label className="form-label text-white">Category</label>
           <select
             name="category"
             value={formData.category}
@@ -145,16 +168,14 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
           >
             <option value="">Select Category</option>
             {SKILL_CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
+              <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
         </div>
 
         {/* Level */}
         <div>
-          <label className="form-label">Level</label>
+          <label className="form-label text-white">Level</label>
           <select
             name="level"
             value={formData.level}
@@ -163,22 +184,20 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
             required
           >
             {SKILL_LEVELS.map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
+              <option key={level} value={level}>{level}</option>
             ))}
           </select>
         </div>
 
         {/* Rate */}
         <div>
-          <label className="form-label">Rate ($)</label>
+          <label className="form-label text-white">Rate ($)</label>
           <input
             type="number"
             name="rate"
             value={formData.rate}
             onChange={handleChange}
-            className="form-input"
+            className="form-input text-red-600"
             min="0"
             step="0.01"
             placeholder="0.00"
@@ -188,10 +207,10 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
 
         {/* Availability */}
         <div>
-          <label className="form-label">Availability</label>
+          <label className="form-label text-white">Availability</label>
           <div className="availability-group">
             {daysOfWeek.map(day => (
-              <label key={day} className="availability-day">
+              <label key={day} className="availability-day text-white">
                 <input
                   type="checkbox"
                   checked={formData.availability.includes(day)}
