@@ -90,26 +90,45 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
     >
       <h2 className="text-2xl font-bold mb-8 text-center text-white">Register New Skill</h2>
 
-      {/* 🌟 Apply black text to all form elements */}
       <form
         onSubmit={handleSubmit}
-        className="form-container"
-        style={{
-          color: 'black'
-        }}
+        className="form-container space-y-6"
       >
-        {/* Ensure all input/select/textarea text is black */}
         <style>
           {`
             .form-container input,
             .form-container textarea,
             .form-container select {
-              color: black !important;
+              color: var(--color-neutral-light) !important;
+              background-color: var(--color-neutral-800) !important;
+              border-color: var(--color-neutral-700) !important;
             }
             .form-container input::placeholder,
             .form-container textarea::placeholder {
-              color: black !important;
-              opacity: 0.7;
+              color: var(--color-neutral-muted) !important;
+            }
+            .form-container input:focus,
+            .form-container textarea:focus,
+            .form-container select:focus {
+              border-color: var(--color-primary) !important;
+              box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+            }
+            .availability-group {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+              gap: 1rem;
+            }
+            .availability-day {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              cursor: pointer;
+              padding: 0.5rem;
+              border-radius: 0.375rem;
+              transition: background-color 0.2s;
+            }
+            .availability-day:hover {
+              background-color: rgba(255, 255, 255, 0.1);
             }
           `}
         </style>
@@ -197,7 +216,7 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
             name="rate"
             value={formData.rate}
             onChange={handleChange}
-            className="form-input text-red-600"
+            className="form-input"
             min="0"
             step="0.01"
             placeholder="0.00"
@@ -224,11 +243,11 @@ const SkillRegistrationForm: React.FC<SkillRegistrationFormProps> = ({ onRegiste
         </div>
 
         {/* Submit Button */}
-        <div className="form-submit">
+        <div className="flex justify-center mt-8">
           <button
             type="submit"
             disabled={loading}
-            className="btn btn-large disabled:opacity-50 bg-blue-800 hover:bg-blue-900 text-white px-8 py-3 rounded-full font-bold shadow-lg transform hover:scale-105 transition-all duration-300"
+            className="btn btn-large bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Registering...' : 'Register Skill'}
           </button>

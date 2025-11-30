@@ -505,7 +505,7 @@ const SkillList: React.FC<SkillListProps> = ({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, name: e.target.value }))
             }
-            className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm placeholder-white/50 text-lg font-medium"
+            className="border-2 border-gray-300 bg-white text-gray-900 px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all placeholder-gray-500 text-lg font-medium"
           />
           <textarea
             placeholder="Description"
@@ -513,7 +513,7 @@ const SkillList: React.FC<SkillListProps> = ({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, description: e.target.value }))
             }
-            className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm placeholder-white/50 text-lg font-medium"
+            className="border-2 border-gray-300 bg-white text-gray-900 px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all placeholder-gray-500 text-lg font-medium"
             rows={4}
           />
           <input
@@ -523,7 +523,7 @@ const SkillList: React.FC<SkillListProps> = ({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, receiver: e.target.value }))
             }
-            className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm placeholder-white/50 text-lg font-medium"
+            className="border-2 border-gray-300 bg-white text-gray-900 px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all placeholder-gray-500 text-lg font-medium"
           />
           <input
             type="number"
@@ -532,20 +532,20 @@ const SkillList: React.FC<SkillListProps> = ({
             onChange={(e) =>
               setForm((prev) => ({ ...prev, rate: e.target.value }))
             }
-            className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm placeholder-white/50 text-lg font-medium"
+            className="border-2 border-gray-300 bg-white text-gray-900 px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all placeholder-gray-500 text-lg font-medium"
           />
           <select
             value={form.category}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, category: e.target.value }))
             }
-            className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm text-lg font-medium"
+            className="border-2 border-gray-300 bg-white text-gray-900 px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg font-medium"
           >
-            <option value="" className="bg-gray-800">
+            <option value="">
               Select Category
             </option>
             {SKILL_CONFIG.CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} className="bg-gray-800">
+              <option key={cat} value={cat}>
                 {cat}
               </option>
             ))}
@@ -558,10 +558,10 @@ const SkillList: React.FC<SkillListProps> = ({
                 level: e.target.value as (typeof SKILL_CONFIG.LEVELS)[number],
               }))
             }
-            className="border-2 border-white/30 bg-white/10 text-white px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all backdrop-blur-sm text-lg font-medium"
+            className="border-2 border-gray-300 bg-white text-gray-900 px-6 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg font-medium"
           >
             {SKILL_CONFIG.LEVELS.map((level) => (
-              <option key={level} value={level} className="bg-gray-800">
+              <option key={level} value={level}>
                 {level}
               </option>
             ))}
@@ -585,7 +585,7 @@ const SkillList: React.FC<SkillListProps> = ({
                     onChange={(e) =>
                       handleSlotChange(idx, e.target.value, a.link)
                     }
-                    className="border-2 border-white/30 bg-white/10 text-white px-4 py-3 rounded-xl flex-1 shadow-md hover:shadow-lg transition-all backdrop-blur-sm placeholder-white/50 text-lg font-medium"
+                    className="border-2 border-gray-300 bg-white text-gray-900 px-4 py-3 rounded-xl flex-1 shadow-md hover:shadow-lg transition-all placeholder-gray-500 text-lg font-medium"
                   />
                   <input
                     type="url"
@@ -594,7 +594,7 @@ const SkillList: React.FC<SkillListProps> = ({
                     onChange={(e) =>
                       handleSlotChange(idx, a.slot, e.target.value)
                     }
-                    className="border-2 border-white/30 bg-white/10 text-white px-4 py-3 rounded-xl flex-1 shadow-md hover:shadow-lg transition-all backdrop-blur-sm placeholder-white/50 text-lg font-medium"
+                    className="border-2 border-gray-300 bg-white text-gray-900 px-4 py-3 rounded-xl flex-1 shadow-md hover:shadow-lg transition-all placeholder-gray-500 text-lg font-medium"
                   />
                   <button
                     onClick={() => handleRemoveSlot(idx)}
