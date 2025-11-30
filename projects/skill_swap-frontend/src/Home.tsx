@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '@txnlab/use-wallet-react'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Features from './components/Features'
-import SkillList from './components/SkillList'
 import UserProfile from './components/UserProfile'
 import BookingModal from './components/BookingModal'
 import ReviewModal from './components/ReviewModal'
@@ -213,27 +212,6 @@ const Home: React.FC = () => {
           <div className="lg:col-span-1 order-2 lg:order-1">
             <div className="card">
               {appClient && <UserProfile appClient={appClient} />}
-            </div>
-          </div>
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title text-center">
-                  🎨 Available Skills
-                </h2>
-              </div>
-              {algorandClient && (
-                <SkillList
-                  onBookSkill={openBooking}
-                  onOpenReviewModal={openFeedback}
-                  algorandClient={algorandClient}
-                  userAddress={activeAddress || ''}
-                  bookedSlots={bookedSlots}
-                  searchQuery={searchQuery}
-                  skills={skills}
-                  setSkills={setSkills}
-                />
-              )}
             </div>
           </div>
         </div>
